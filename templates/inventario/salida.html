@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Salida de Inventario - Sistema POS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-dash-circle"></i> Salida de Inventario</h1>
+        <a href="{{ url_for('inventario') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">Productos Disponibles</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <input type="text" id="searchProducto" class="form-control" 
+                               placeholder="Buscar producto...">
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm table-hover">
+                            <thead class="sticky-top bg-white">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Stock Disponible</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productosTableBody">
+                                {% for producto in productos %}
+                                <tr class="producto-row">
+                                    <td>{{ producto.Descripcion }}</td>
+                                    <td>
+                                        <span class="badge {% if producto.Existencias <= producto.Stock_Minimo %}bg-warning{% else %}bg-success{% endif %}">
+                                            {{ producto.Existencias }} {{ producto.Abreviatura }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" 
+                                                onclick="agregarProducto({{ producto.ID_Producto }}, '{{ producto.Descripcion }}', {{ producto.Existencias }}, '{{ producto.Abreviatura }}')">
+                                            <i class="bi bi-dash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Detalle de Salida</h5>
+                </div>
+                <div class="card-body">
+                    <form id="formSalida">
+                        <div class="mb-3">
+                            <label for="tipo_movimiento" class="form-label">Tipo de Movimiento *</label>
+                            <select id="tipo_movimiento" class="form-select" required>
+                                <option value="">Seleccionar...</option>
+                                {% for tipo in tipos_movimiento %}
+                                <option value="{{ tipo.ID_TipoMovimiento }}">{{ tipo.Descripcion }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="bodega" class="form-label">Bodega *</label>
+                            <select id="bodega" class="form-select" required>
+                                <option value="">Seleccionar...</option>
+                                {% for bodega in bodegas %}
+                                <option value="{{ bodega.ID_Bodega }}">{{ bodega.Nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="observacion" class="form-label">Observación *</label>
+                            <textarea id="observacion" class="form-control" rows="3" required 
+                                      placeholder="Motivo de la salida..."></textarea>
+                        </div>
+                    </form>
+
+                    <hr>
+
+                    <h6>Productos a Retirar</h6>
+                    <div id="productosAgregados" style="max-height: 200px; overflow-y: auto; min-height: 100px;">
+                        <p class="text-center text-muted">No hay productos agregados</p>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-grid gap-2">
+                        <button id="btnGuardar" class="btn btn-warning" onclick="guardarSalida()" disabled>
+                            <i class="bi bi-save"></i> Guardar Salida
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="limpiarFormulario()">
+                            <i class="bi bi-x-circle"></i> Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let productosSalida = [];
+
+function agregarProducto(id, nombre, stockDisponible, unidad) {
+    const cantidad = prompt(`Cantidad a retirar de "${nombre}" (Disponible: ${stockDisponible}):`, '1');
+    if (!cantidad || cantidad <= 0) return;
+    
+    const cantidadNum = parseFloat(cantidad);
+    
+    if (cantidadNum > stockDisponible) {
+        mostrarToast('Cantidad mayor al stock disponible', 'danger');
+        return;
+    }
+    
+    productosSalida.push({
+        producto_id: id,
+        nombre: nombre,
+        cantidad: cantidadNum,
+        stock_disponible: stockDisponible,
+        unidad: unidad
+    });
+    
+    actualizarListaProductos();
+    mostrarToast('Producto agregado', 'success');
+}
+
+function actualizarListaProductos() {
+    const container = document.getElementById('productosAgregados');
+    const btnGuardar = document.getElementById('btnGuardar');
+    
+    if (productosSalida.length === 0) {
+        container.innerHTML = '<p class="text-center text-muted">No hay productos agregados</p>';
+        btnGuardar.disabled = true;
+        return;
+    }
+    
+    let html = '';
+    productosSalida.forEach((item, index) => {
+        html += `
+            <div class="border-bottom pb-2 mb-2">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <strong>${item.nombre}</strong><br>
+                        <small>Cantidad: ${item.cantidad} ${item.unidad}</small><br>
+                        <small class="text-muted">Disponible: ${item.stock_disponible}</small>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarProducto(${index})">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    btnGuardar.disabled = false;
+}
+
+function eliminarProducto(index) {
+    productosSalida.splice(index, 1);
+    actualizarListaProductos();
+}
+
+function limpiarFormulario() {
+    if (productosSalida.length > 0 && !confirm('¿Limpiar el formulario?')) return;
+    
+    productosSalida = [];
+    actualizarListaProductos();
+    document.getElementById('formSalida').reset();
+}
+
+async function guardarSalida() {
+    const tipoMovimiento = document.getElementById('tipo_movimiento').value;
+    const bodega = document.getElementById('bodega').value;
+    const observacion = document.getElementById('observacion').value;
+    
+    if (!tipoMovimiento || !bodega || !observacion) {
+        mostrarToast('Completa todos los campos requeridos', 'warning');
+        return;
+    }
+    
+    if (productosSalida.length === 0) {
+        mostrarToast('Agrega al menos un producto', 'warning');
+        return;
+    }
+    
+    const btnGuardar = document.getElementById('btnGuardar');
+    btnGuardar.disabled = true;
+    btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Guardando...';
+    
+    try {
+        const response = await fetch('/inventario/salida', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                tipo_movimiento_id: tipoMovimiento,
+                bodega_id: bodega,
+                observacion: observacion,
+                items: productosSalida
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            mostrarToast('Salida registrada exitosamente', 'success');
+            setTimeout(() => {
+                window.location.href = '/inventario/detalle/' + data.movimiento_id;
+            }, 1500);
+        } else {
+            mostrarToast(data.message || 'Error al guardar', 'danger');
+            btnGuardar.disabled = false;
+            btnGuardar.innerHTML = '<i class="bi bi-save"></i> Guardar Salida';
+        }
+    } catch (error) {
+        mostrarToast('Error de conexión', 'danger');
+        btnGuardar.disabled = false;
+        btnGuardar.innerHTML = '<i class="bi bi-save"></i> Guardar Salida';
+    }
+}
+
+// Búsqueda de productos
+document.getElementById('searchProducto').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('.producto-row');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

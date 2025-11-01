@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Productos - Sistema POS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-box-seam"></i> Gestión de Productos</h1>
+        <a href="{{ url_for('producto_nuevo') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nuevo Producto
+        </a>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="mb-3">
+                <input type="text" id="searchInput" class="form-control" 
+                       placeholder="Buscar productos..." onkeyup="buscarEnTabla('searchInput', 'productosTable')">
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover" id="productosTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Descripción</th>
+                            <th>Categoría</th>
+                            <th>Unidad</th>
+                            <th>Existencias</th>
+                            <th>Stock Mínimo</th>
+                            <th>Costo</th>
+                            <th>Precio Venta</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in productos %}
+                        <tr>
+                            <td>{{ producto.ID_Producto }}</td>
+                            <td>{{ producto.Descripcion }}</td>
+                            <td>{{ producto.Categoria or 'Sin categoría' }}</td>
+                            <td>{{ producto.Abreviatura }}</td>
+                            <td>
+                                <span class="badge {% if producto.Existencias <= producto.Stock_Minimo %}bg-warning{% else %}bg-success{% endif %}">
+                                    {{ producto.Existencias }}
+                                </span>
+                            </td>
+                            <td>{{ producto.Stock_Minimo }}</td>
+                            <td>${{ "%.2f"|format(producto.Costo_Promedio or 0) }}</td>
+                            <td>${{ "%.2f"|format(producto.Precio_Venta) }}</td>
+                            <td>
+                                {% if producto.Existencias <= producto.Stock_Minimo %}
+                                <span class="badge bg-warning">Stock Bajo</span>
+                                {% else %}
+                                <span class="badge bg-success">Normal</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('producto_editar', id=producto.ID_Producto) }}" 
+                                       class="btn btn-outline-primary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('producto_eliminar', id=producto.ID_Producto) }}" 
+                                          style="display: inline;" onsubmit="return confirmarEliminacion('¿Eliminar este producto?')">
+                                        <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted">No hay productos registrados</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

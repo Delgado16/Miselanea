@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Inventario - Sistema POS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-clipboard-data"></i> Gestión de Inventario</h1>
+        <div class="btn-group">
+            <a href="{{ url_for('inventario_entrada') }}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Entrada
+            </a>
+            <a href="{{ url_for('inventario_salida') }}" class="btn btn-warning">
+                <i class="bi bi-dash-circle"></i> Salida
+            </a>
+            <a href="{{ url_for('reportes') }}" class="btn btn-info">
+                <i class="bi bi-graph-up"></i> Reportes
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="mb-3">
+                <input type="text" id="searchInput" class="form-control" 
+                       placeholder="Buscar movimientos..." onkeyup="buscarEnTabla('searchInput', 'movimientosTable')">
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover" id="movimientosTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tipo</th>
+                            <th>Fecha</th>
+                            <th>N° Factura</th>
+                            <th>Proveedor</th>
+                            <th>Bodega</th>
+                            <th>Observación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for movimiento in movimientos %}
+                        <tr>
+                            <td><strong>{{ movimiento.Letra }}-{{ movimiento.ID_Movimiento }}</strong></td>
+                            <td>
+                                <span class="badge {% if movimiento.Letra == 'E' %}bg-success{% elif movimiento.Letra == 'S' %}bg-warning{% else %}bg-info{% endif %}">
+                                    {{ movimiento.TipoMovimiento }}
+                                </span>
+                            </td>
+                            <td>{{ movimiento.Fecha.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ movimiento.N_Factura or '-' }}</td>
+                            <td>{{ movimiento.Proveedor or '-' }}</td>
+                            <td>{{ movimiento.Bodega or '-' }}</td>
+                            <td>{{ movimiento.Observacion[:50] if movimiento.Observacion else '-' }}</td>
+                            <td>
+                                <a href="{{ url_for('inventario_detalle', id=movimiento.ID_Movimiento) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Ver
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">No hay movimientos registrados</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

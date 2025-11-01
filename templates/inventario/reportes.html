@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes de Inventario - Sistema POS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-graph-up"></i> Reportes de Inventario</h1>
+        <a href="{{ url_for('inventario') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <!-- Tarjetas de resumen -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white shadow">
+                <div class="card-body">
+                    <h6 class="text-uppercase mb-1">Valor Total del Inventario</h6>
+                    <h2 class="mb-0">${{ "%.2f"|format(valor_inventario) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white shadow">
+                <div class="card-body">
+                    <h6 class="text-uppercase mb-1">Productos con Movimiento</h6>
+                    <h2 class="mb-0">{{ productos_movimientos|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-white shadow">
+                <div class="card-body">
+                    <h6 class="text-uppercase mb-1">Productos Sin Movimiento (90 días)</h6>
+                    <h2 class="mb-0">{{ productos_sin_movimiento|length }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Productos con más movimientos -->
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Top 10 Productos con Movimiento (30 días)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Entradas</th>
+                                    <th class="text-center">Salidas</th>
+                                    <th class="text-center">Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for producto in productos_movimientos %}
+                                <tr>
+                                    <td>{{ producto.Descripcion }}</td>
+                                    <td class="text-center"><span class="badge bg-success">{{ producto.Entradas }}</span></td>
+                                    <td class="text-center"><span class="badge bg-warning">{{ producto.Salidas }}</span></td>
+                                    <td class="text-center">{{ producto.Existencias }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">No hay datos</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Movimientos por tipo -->
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Movimientos por Tipo (30 días)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Tipo de Movimiento</th>
+                                    <th class="text-center">Cantidad</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for movimiento in movimientos_tipo %}
+                                <tr>
+                                    <td>
+                                        <span class="badge {% if movimiento.Letra == 'E' %}bg-success{% elif movimiento.Letra == 'S' %}bg-warning{% else %}bg-info{% endif %}">
+                                            {{ movimiento.Letra }}
+                                        </span>
+                                        {{ movimiento.Descripcion }}
+                                    </td>
+                                    <td class="text-center"><strong>{{ movimiento.Total }}</strong></td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted">No hay datos</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Productos sin movimiento -->
+        {% if productos_sin_movimiento %}
+        <div class="col-md-12">
+            <div class="card shadow border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Productos Sin Movimiento (90 días)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Stock Actual</th>
+                                    <th>Fecha de Creación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for producto in productos_sin_movimiento %}
+                                <tr>
+                                    <td>{{ producto.Descripcion }}</td>
+                                    <td class="text-center">{{ producto.Existencias }}</td>
+                                    <td>{{ producto.Fecha_Creacion.strftime('%d/%m/%Y') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Pulperia POS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-speedometer2"></i> Dashboard</h1>
+        <div class="text-muted">
+            <i class="bi bi-calendar3"></i> {{ now().strftime('%d/%m/%Y %H:%M') }}
+        </div>
+    </div>
+
+    <!-- Tarjetas de estadísticas -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase mb-1">Ventas Hoy</h6>
+                            <h2 class="mb-0">${{ "%.2f"|format(ventas_dia) }}</h2>
+                        </div>
+                        <i class="bi bi-cash-coin" style="font-size: 3rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-success text-white shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase mb-1">Ventas del Mes</h6>
+                            <h2 class="mb-0">${{ "%.2f"|format(ventas_mes) }}</h2>
+                        </div>
+                        <i class="bi bi-graph-up-arrow" style="font-size: 3rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-info text-white shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase mb-1">Total Productos</h6>
+                            <h2 class="mb-0">{{ total_productos }}</h2>
+                        </div>
+                        <i class="bi bi-box-seam" style="font-size: 3rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-warning text-white shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase mb-1">Stock Bajo</h6>
+                            <h2 class="mb-0">{{ productos_bajo_stock|length }}</h2>
+                        </div>
+                        <i class="bi bi-exclamation-triangle" style="font-size: 3rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Gráfico de ventas -->
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Ventas de los Últimos 7 Días</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="ventasChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Productos más vendidos -->
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-trophy"></i> Top 5 Productos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for producto in productos_mas_vendidos %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-truncate">{{ producto.Descripcion }}</span>
+                            <span class="badge bg-primary rounded-pill">{{ producto.total_vendido }}</span>
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center">No hay datos disponibles</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertas de stock bajo -->
+    {% if productos_bajo_stock %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow border-warning">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle-fill"></i> 
+                        Alertas de Stock Bajo ({{ productos_bajo_stock|length }} productos)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Existencias</th>
+                                    <th>Stock Mínimo</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for producto in productos_bajo_stock %}
+                                <tr>
+                                    <td>{{ producto.Descripcion }}</td>
+                                    <td>
+                                        <span class="badge {% if producto.Existencias == 0 %}bg-danger{% else %}bg-warning{% endif %}">
+                                            {{ producto.Existencias }}
+                                        </span>
+                                    </td>
+                                    <td>{{ producto.Stock_Minimo }}</td>
+                                    <td>
+                                        {% if producto.Existencias == 0 %}
+                                        <span class="badge bg-danger">Agotado</span>
+                                        {% elif producto.Existencias <= producto.Stock_Minimo * 0.5 %}
+                                        <span class="badge bg-warning">Crítico</span>
+                                        {% else %}
+                                        <span class="badge bg-info">Bajo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('inventario_entrada') }}?producto={{ producto.ID_Producto }}" 
+                                           class="btn btn-sm btn-primary">
+                                            <i class="bi bi-plus-circle"></i> Reabastecer
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Datos para el gráfico de ventas
+    const ventasData = {
+        labels: [
+            {% for venta in ventas_semana %}
+            '{{ venta.fecha.strftime("%d/%m") }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            label: 'Ventas ($)',
+            data: [
+                {% for venta in ventas_semana %}
+                {{ venta.total }},
+                {% endfor %}
+            ],
+            backgroundColor: 'rgba(13, 110, 253, 0.2)',
+            borderColor: 'rgba(13, 110, 253, 1)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true
+        }]
+    };
+
+    // Configuración del gráfico
+    const config = {
+        type: 'line',
+        data: ventasData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Ventas: $' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(0);
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    // Crear el gráfico
+    const ctx = document.getElementById('ventasChart').getContext('2d');
+    new Chart(ctx, config);
+</script>
+{% endblock %}

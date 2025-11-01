@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Historial de Ventas - Sistema POS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-clock-history"></i> Historial de Ventas</h1>
+        <a href="{{ url_for('ventas') }}" class="btn btn-primary">
+            <i class="bi bi-cart-plus"></i> Nueva Venta
+        </a>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="mb-3">
+                <input type="text" id="searchInput" class="form-control" 
+                       placeholder="Buscar ventas..." onkeyup="buscarEnTabla('searchInput', 'ventasTable')">
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover" id="ventasTable">
+                    <thead>
+                        <tr>
+                            <th>Factura #</th>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Total</th>
+                            <th>Método de Pago</th>
+                            <th>Vendedor</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for venta in ventas %}
+                        <tr>
+                            <td><strong>#{{ venta.ID_Factura }}</strong></td>
+                            <td>{{ venta.Fecha.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ venta.Hora.strftime('%H:%M:%S') if venta.Hora else '-' }}</td>
+                            <td><strong class="text-success">${{ "%.2f"|format(venta.Total) }}</strong></td>
+                            <td><span class="badge bg-info">{{ venta.MetodoPago }}</span></td>
+                            <td>{{ venta.NombreUsuario }}</td>
+                            <td>
+                                <a href="{{ url_for('venta_detalle', id=venta.ID_Factura) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Ver Detalle
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">No hay ventas registradas</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

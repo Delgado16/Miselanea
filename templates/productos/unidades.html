@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Unidades de Medida - Sistema POS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-rulers"></i> Unidades de Medida</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevaUnidad">
+            <i class="bi bi-plus-circle"></i> Nueva Unidad
+        </button>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Descripción</th>
+                                    <th>Abreviatura</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for unidad in unidades %}
+                                <tr>
+                                    <td>{{ unidad.ID_Unidad }}</td>
+                                    <td>{{ unidad.Descripcion }}</td>
+                                    <td><span class="badge bg-secondary">{{ unidad.Abreviatura }}</span></td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" 
+                                                    onclick="editarUnidad({{ unidad.ID_Unidad }}, '{{ unidad.Descripcion }}', '{{ unidad.Abreviatura }}')">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <form method="POST" action="{{ url_for('unidad_eliminar', id=unidad.ID_Unidad) }}" 
+                                                  style="display: inline;" onsubmit="return confirmarEliminacion('¿Eliminar esta unidad?')">
+                                                <button type="submit" class="btn btn-outline-danger">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">No hay unidades registradas</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Unidad -->
+<div class="modal fade" id="modalNuevaUnidad" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('unidad_nueva') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Unidad de Medida</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label">Descripción</label>
+                        <input type="text" class="form-control" id="descripcion" name="descripcion" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="abreviatura" class="form-label">Abreviatura</label>
+                        <input type="text" class="form-control" id="abreviatura" name="abreviatura" 
+                               maxlength="10" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Unidad -->
+<div class="modal fade" id="modalEditarUnidad" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" id="formEditarUnidad">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Unidad de Medida</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="descripcion_edit" class="form-label">Descripción</label>
+                        <input type="text" class="form-control" id="descripcion_edit" name="descripcion" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="abreviatura_edit" class="form-label">Abreviatura</label>
+                        <input type="text" class="form-control" id="abreviatura_edit" name="abreviatura" 
+                               maxlength="10" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function editarUnidad(id, descripcion, abreviatura) {
+    document.getElementById('descripcion_edit').value = descripcion;
+    document.getElementById('abreviatura_edit').value = abreviatura;
+    document.getElementById('formEditarUnidad').action = `/unidades-medida/editar/${id}`;
+    new bootstrap.Modal(document.getElementById('modalEditarUnidad')).show();
+}
+</script>
+{% endblock %}
